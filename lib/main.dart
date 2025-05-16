@@ -1,3 +1,4 @@
+import 'package:fil_pilot/common/utils/url_config.dart';
 import 'package:fil_pilot/features/login/data/user_login_repo_impl.dart';
 import 'package:fil_pilot/features/login/presentation/bloc/login_cubit.dart';
 import 'package:fil_pilot/features/login/presentation/views/login.dart';
@@ -6,13 +7,20 @@ import 'package:fil_pilot/features/production/feature/record_data/presentation/b
 import 'package:fil_pilot/features/production/feature/record_data/presentation/bloc/metadata_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// Import ProductionScreen
+import 'package:shared_preferences/shared_preferences.dart';
 
-const baseUrl = "http://192.168.108.82:8000";
+// We'll use dynamic URL from UrlConfig instead of hardcoding it here
+String baseUrl = UrlConfig.defaultUrl;
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize the baseUrl from saved preferences
+  baseUrl = await UrlConfig.getServerUrl();
+  
   final UserLoginRepoImpl userLoginRepo = UserLoginRepoImpl();
   final FastapiMetadataRepoImpl fastapiMetadataRepo = FastapiMetadataRepoImpl();
+  
   runApp(
     MultiBlocProvider(
       providers: [
@@ -22,7 +30,7 @@ void main() {
         ),
         BlocProvider(create: (_) => DataRecordsCubit()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }

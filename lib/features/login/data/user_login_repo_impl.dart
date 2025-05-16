@@ -4,13 +4,14 @@ import 'package:fil_pilot/features/login/domain/repository/user_login_repo.dart'
 import 'package:fil_pilot/main.dart';
 
 class UserLoginRepoImpl implements UserLoginRepo {
-  final FastapiLoginDatasource fastapiLoginDatasource =
-      FastapiLoginDatasource(baseUrl: baseUrl);
-
   @override
   Future<UserEntity?> loginWithNameandNo(String name, String empNo) async {
     try {
-      final body = await fastapiLoginDatasource.loginWithNameandNo(name, empNo);
+      // Create a new datasource using the current baseUrl
+      final FastapiLoginDatasource datasource = FastapiLoginDatasource(
+        baseUrl: baseUrl,
+      );
+      final body = await datasource.loginWithNameandNo(name, empNo);
 
       if (body == null) {
         return null;

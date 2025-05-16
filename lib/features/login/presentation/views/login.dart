@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fil_pilot/common/utils/url_config.dart';
 import 'package:fil_pilot/features/admin/presentation/views/admin.dart';
 import 'package:fil_pilot/features/login/presentation/bloc/login_cubit.dart';
 import 'package:fil_pilot/features/login/presentation/bloc/login_state.dart';
@@ -15,6 +16,21 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _empNoController = TextEditingController();
+  final TextEditingController _urlController = TextEditingController();
+  bool _showUrlConfig = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServerUrl();
+  }
+
+  Future<void> _loadServerUrl() async {
+    final url = await UrlConfig.getServerUrl();
+    setState(() {
+      _urlController.text = url;
+    });
+  }
 
   void _handleLogin() async {
     final name = _nameController.text;
@@ -26,6 +42,25 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       await context.read<LoginCubit>().loginWithNameandNo(name, empNo);
     }
+  }
+
+  void _saveServerUrl() async {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("URL cannot be empty")));
+      return;
+    }
+
+    await UrlConfig.setServerUrl(url);
+    setState(() {
+      _showUrlConfig = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Server URL saved successfully")),
+    );
   }
 
   @override
@@ -61,6 +96,16 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             elevation: 0, // Optional: remove shadow for a flat look
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  setState(() {
+                    _showUrlConfig = !_showUrlConfig;
+                  });
+                },
+              ),
+            ],
           ),
           body: Container(
             color: Colors.lightBlue, // Light blue background color
@@ -134,6 +179,40 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        if (_showUrlConfig) ...[
+                          const SizedBox(height: 24),
+                          TextField(
+                            controller: _urlController,
+                            decoration: InputDecoration(
+                              labelText: 'Server URL',
+                              prefixIcon: const Icon(Icons.link),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            keyboardType: TextInputType.url,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _saveServerUrl,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16.0,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              backgroundColor: Colors.yellow, // Yellow button
+                            ),
+                            child: const Text(
+                              'Save URL',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.lightBlue, // Sky blue text
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -160,6 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _nameController.dispose();
     _empNoController.dispose();
+    _urlController.dispose();
     super.dispose();
   }
 }

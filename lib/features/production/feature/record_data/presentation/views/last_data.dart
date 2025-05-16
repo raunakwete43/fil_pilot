@@ -37,6 +37,7 @@ class _LastDataFormState extends State<LastDataForm> {
   final TextEditingController _shiftEngineerController =
       TextEditingController();
   final TextEditingController _batchNoController = TextEditingController();
+  bool _isLoading = false; // Add loading state
 
   @override
   void dispose() {
@@ -237,6 +238,47 @@ class _LastDataFormState extends State<LastDataForm> {
     );
   }
 
+  // This is a wrapper function that handles the loading state
+  void _handleSubmit() async {
+    if (_lineEngineerController.text.isEmpty ||
+        _shiftEngineerController.text.isEmpty ||
+        _batchNoController.text.isEmpty) {
+      // Show a warning message if any field is empty
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all fields before submitting.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Set loading state to true
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Call the original submit function
+      await Future.microtask(() => _submitData());
+    } catch (e) {
+      // Show error if something goes wrong
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      // Make sure we reset the loading state if the widget is still mounted
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -267,31 +309,29 @@ class _LastDataFormState extends State<LastDataForm> {
         ),
         const SizedBox(height: 20),
         ElevatedButton(
-          onPressed: () {
-            if (_lineEngineerController.text.isEmpty ||
-                _shiftEngineerController.text.isEmpty ||
-                _batchNoController.text.isEmpty) {
-              // Show a warning message if any field is empty
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please fill all fields before submitting.'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } else {
-              // If all fields are filled, proceed with submission
-              _submitData();
-            }
-          },
+          // Disable the button when loading
+          onPressed: _isLoading ? null : _handleSubmit,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.yellow,
             foregroundColor: Colors.lightBlue,
             minimumSize: const Size(double.infinity, 50),
           ),
-          child: const Text(
-            'Submit',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          child:
+              _isLoading
+                  ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.lightBlue,
+                      ),
+                    ),
+                  )
+                  : const Text(
+                    'Submit',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
         ),
       ],
     );
